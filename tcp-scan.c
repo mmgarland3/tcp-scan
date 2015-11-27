@@ -87,6 +87,8 @@ static uint16_t *port_list=NULL;
 static char *ga_err_msg;		/* getaddrinfo error message */
 static char pcap_savefile[MAXLINE];	/* pcap savefile filename */
 static pcap_dumper_t *pcap_dump_handle = NULL;  /* pcap savefile handle */
+static int xml=0;                   /* output format 1=xml */
+FILE *fptr;
 
 int
 main(int argc, char *argv[]) {
@@ -241,10 +243,21 @@ main(int argc, char *argv[]) {
  *      Display initial message.
  */
    printf("Starting %s with %u ports\n", PACKAGE_STRING, num_hosts);
+  if(xml>0) { 
+	 fprintf(fptr, "\t<detail>Starting %s with %u ports</detail>\n", PACKAGE_STRING, num_hosts);
+	 fprintf(fptr, "<table>\n\t");
+         fprintf(fptr,"<headt>\n\t\t<g3>IP</g3>\n");
+         fprintf(fptr,"\t\t<g3>Port number</g3>\n");
+         fprintf(fptr,"\t\t<g3>Status</g3>\n\t\t<g3>df</g3>\n\t\t<g3>tos</g3>\n");
+         fprintf(fptr,"\t\t<g3>Flags</g3>\n\t\t<g3>Win</g3>\n\t\t<g3>ttl</g3>\n\t\t<g3>id</g3>\n");
+         fprintf(fptr,"\t\t<g3>length</g3>\n\t</headt>\n");
+	}
+
 /*
  *      Display the lists if verbose setting is 3 or more.
  */
    if (verbose > 2)
+
       dump_list();
 /*
  *      Main loop: send packets to all hosts in order until a response
@@ -362,6 +375,9 @@ main(int argc, char *argv[]) {
    printf("Ending %s: %u ports scanned in %.3f seconds (%.2f ports/sec).  %u responded\n",
           PACKAGE_STRING, num_hosts, elapsed_seconds, num_hosts/elapsed_seconds,
           responders);
+   if(xml>0) { fprintf(fptr, "<detail>Ending %s: %u ports scanned in %.3f seconds (%.2f ports/sec).  %u responded</detail>\n</tcpscan>",
+          PACKAGE_STRING, num_hosts, elapsed_seconds, num_hosts/elapsed_seconds,
+          responders);  }
    if (debug) {print_times(); printf("main: End\n");}
    return 0;
 }
@@ -434,8 +450,11 @@ display_packet(unsigned n, const unsigned char *packet_in,
       char *portname = portnames[ntohs(tcph->source)];
       msg = make_message("%s%u (%s)\t", cp, ntohs(tcph->source),
                          portname?portname:"unknown");
+	if (xml>0) { fprintf(fptr, "\t<device>\n\t\t<ip>%s</ip>\n\t\t<port>%u</port>/n\t\t<ser>(%s)</ser>", cp, ntohs(tcph->source),
+                         portname?portname:"unknown"); }
    } else {
       msg = make_message("%s%u\t", cp, ntohs(tcph->source));
+        if (xml>0) { fprintf(fptr, "\t<device>\n\t\t<ip>%s</ip>\n\t\t<port>%u</port>\n", cp, ntohs(tcph->source)); }
    }
    free(cp);
 /*
@@ -445,10 +464,13 @@ display_packet(unsigned n, const unsigned char *packet_in,
    cp = msg;
    if (tcph->syn && tcph->ack) {	/* SYN + ACK = Open */
       msg = make_message("%sOPEN", cp);
+      if (xml>0) {fprintf(fptr, "\t\t<status>OPEN</status>\n");}
    } else if (tcph->rst) {		/* RST = Closed */
       msg = make_message("%sCLOSED", cp);
+      if (xml>0) {fprintf(fptr, "\t\t<status>CLOSED</status>\n");}
    } else {				/* Shouldn't happen */
       msg = make_message("%sUNKNOWN", cp);
+      if (xml>0) {fprintf(fptr, "\t\t<status>UNKNOWN</status>\n");}
    }
    free(cp);
    if (!quiet_flag) {
@@ -539,6 +561,17 @@ display_packet(unsigned n, const unsigned char *packet_in,
       msg=make_message("%s\tDF=%s TOS=%u flags=%s win=%u ttl=%u id=%u ip_len=%d",
                        cp, df, iph->tos, flags, ntohs(tcph->window), iph->ttl,
                        ntohs(iph->id), ntohs(iph->tot_len));
+      if(xml>0) { 
+		fprintf(fptr,"\t\t<df>%s</df>\n", df);
+                fprintf(fptr,"\t\t<tos>%s</tos>\n", iph->tos);
+                fprintf(fptr,"\t\t<flags>%s</flags>\n", flags);
+                fprintf(fptr,"\t\t<win>%u</win>\n", ntohs(tcph->window));
+                fprintf(fptr,"\t\t<ttl>%u</ttl>\n", iph->ttl);
+                fprintf(fptr,"\t\t<id>%u</id>\n",  ntohs(iph->id));
+                fprintf(fptr,"\t\t<len>%d</len>\n",  ntohs(iph->tot_len));
+		fprintf(fptr,"\t</device>\n");
+
+		}
       free(cp);
       free(flags);
 /*
@@ -977,6 +1010,11 @@ initialise(void) {
    printf("Interface: %s, datalink type: %s (%s)\n", if_name,
           pcap_datalink_val_to_name(datalink),
           pcap_datalink_val_to_description(datalink));
+	if(xml>0) {  fprintf(fptr, "<detail>Interface: %s, datalink type: %s (%s)</detail>\n", if_name,
+		     pcap_datalink_val_to_name(datalink),
+          	     pcap_datalink_val_to_description(datalink));
+		
+	}
    switch (datalink) {
       case DLT_EN10MB:		/* Ethernet */
          ip_offset = 14;
@@ -1148,9 +1186,12 @@ clean_up(void) {
 
    if ((pcap_stats(pcap_handle, &stats)) < 0)
       err_msg("pcap_stats: %s\n", pcap_geterr(pcap_handle));
-
-   printf("%u packets received by filter, %u packets dropped by kernel\n",
-          stats.ps_recv, stats.ps_drop);
+	{
+		   printf("%u packets received by filter, %u packets dropped by kernel\n",stats.ps_recv, stats.ps_drop);
+   if (xml>0) {
+	fprintf(fptr, "</table>\n<detail>%u packets received by filter, %u packets dropped by kernel</detail>\n", stats.ps_recv, stats.ps_drop); 
+	     }
+	}
    if (pcap_dump_handle)
       pcap_dump_close(pcap_dump_handle);
    pcap_close(pcap_handle);
@@ -1837,6 +1878,7 @@ process_options(int argc, char *argv[]) {
       {"interval", required_argument, 0, 'i'},
       {"backoff", required_argument, 0, 'b'},
       {"verbose", no_argument, 0, 'v'},
+      {"xml", no_argument, 0, 'X'},
       {"version", no_argument, 0, 'V'},
       {"debug", no_argument, 0, 'd'},
       {"data", required_argument, 0, 'D'},	/* depreciated */
@@ -1869,7 +1911,7 @@ process_options(int argc, char *argv[]) {
       {0, 0, 0, 0}
    };
    const char *short_options =
-      "f:hr:t:i:b:vVdD:p:s:e:w:oS:m:WaTn:l:I:qgF:O:RNPL:6B:c:E:C:";
+      "f:hr:t:i:b:vVdD:p:s:e:w:oS:m:WaTn:l:I:qgF:O:RNPL:6B:c:E:C:X";
    int arg;
    int options_index=0;
 
@@ -1881,6 +1923,10 @@ process_options(int argc, char *argv[]) {
          case 'f':	/* --file */
             strlcpy(filename, optarg, sizeof(filename));
             filename_flag=1;
+            break;
+        case 'X':
+            tcp_scan_xml(); /*--xml output */
+            xml++;
             break;
          case 'h':	/* --help */
             usage(EXIT_SUCCESS, 1);
@@ -2035,6 +2081,16 @@ tcp_scan_version (void) {
    fprintf(stderr, "For more information about these matters, see the file named COPYING.\n");
    fprintf(stderr, "\n");
    fprintf(stderr, "%s\n", pcap_lib_version());
+}
+void
+tcp_scan_xml (void) {
+	fptr = fopen("tcp-scan.xml","a");
+        fprintf(fptr, "<?xml version=\"1.0\"?> \n");
+        fprintf(fptr, "<?xml-stylesheet type=\"text/css\" href=\"tcpscan.css\"?>");
+        time_t t;
+        time(&t);
+        fprintf(fptr, "\n<tcpscan> \n");
+        fprintf(fptr, "<heading> Tcp-scan Report: %s </heading> \n", ctime(&t));
 }
 
 /*
