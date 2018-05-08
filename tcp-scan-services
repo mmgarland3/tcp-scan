@@ -725,6 +725,7 @@ ams	1037/tcp
 mtqp	1038/tcp
 sbl	1039/tcp
 netarx	1040/tcp
+doorking 1040/tcp  # http://www.doorking.com/sites/default/files/downloads/1830_LAN_guide_04.11.pdf
 danf-ak2	1041/tcp
 afrog	1042/tcp
 boinc-client	1043/tcp
