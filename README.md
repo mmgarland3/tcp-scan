@@ -1,7 +1,7 @@
 # tcp-scan
 
-[![Build Status](https://secure.travis-ci.org/royhills/tcp-scan.png)](http://travis-ci.org/royhills/tcp-scan)
-[![Coverage Status](https://coveralls.io/repos/royhills/tcp-scan/badge.png?branch=master)](https://coveralls.io/r/royhills/tcp-scan?branch=master)
+This is a fork of the long-stagnant tcp-scan application.  My primary objective in forking this project was initially to update tcp-scan-services with new applications and services.
+This is intended as a pentesting resource, but will also probably be useful for network and systems admins.
 
 The TCP scanner.
 
