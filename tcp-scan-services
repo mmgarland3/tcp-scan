@@ -4292,6 +4292,7 @@ t2-brm	7933/tcp
 supercell	7967/tcp
 micromuse-ncps	7979/tcp
 quest-vista	7980/tcp
+OMAPI	7911/tcp	# https://wiki.wireshark.org/Object_Management_API
 irdmi2	7999/tcp
 irdmi	8000/tcp
 vcom-tunnel	8001/tcp
@@ -4699,6 +4700,7 @@ ars-vista	27782/tcp
 tw-auth-key	27999/tcp
 nxlmd	28000/tcp
 siemensgsm	28240/tcp
+kubernetes	29387/tcp  # https://console.bluemix.net/docs/tutorials/scalable-webapp-kubernetes.html#deploy-a-scalable-web-application-on-kubernetes
 pago-services1	30001/tcp
 pago-services2	30002/tcp
 Elite	31337/tcp
