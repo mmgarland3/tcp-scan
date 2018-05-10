@@ -4487,6 +4487,7 @@ netiq-endpt	10115/tcp
 netiq-voipa	10116/tcp
 bmc-perf-sd	10128/tcp
 apollo-relay	10252/tcp
+kubernetes	10250/tcp # https://github.com/kubernetes/kubernetes/issues/52184
 axis-wimp-port	10260/tcp
 blocks	10288/tcp
 rmiaux	10990/tcp
