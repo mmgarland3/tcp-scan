@@ -4461,6 +4461,7 @@ osm-appsrvr	9990/tcp
 osm-oev	9991/tcp
 palace-1	9992/tcp
 palace-2	9993/tcp
+zerotier    9993/udp
 palace-3	9994/tcp
 palace-4	9995/tcp
 palace-5	9996/tcp
